@@ -15,7 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
+
+        // Registrar middleware de tenant (se aplicará selectivamente en rutas)
+        $middleware->alias([
+            'tenant' => \App\Http\Middleware\ResolveTenantDatabase::class,
+        ]);
     })
+    ->withProviders([
+        \App\Providers\AuthServiceProvider::class,
+        \App\Providers\RouteServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
