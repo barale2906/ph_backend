@@ -4,6 +4,7 @@ use App\Http\Controllers\Asistentes\AsistenteController;
 use App\Http\Controllers\Inmuebles\InmuebleController;
 use App\Http\Controllers\Phs\PhController;
 use App\Http\Controllers\Reuniones\ReunionController;
+use App\Http\Controllers\Reportes\ReporteController;
 use App\Http\Controllers\Timers\TimerController;
 use App\Http\Controllers\Votaciones\OpcionController;
 use App\Http\Controllers\Votaciones\PreguntaController;
@@ -135,4 +136,48 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
      * IMPORTANTE: Los votos son inmutables una vez registrados.
      */
     Route::apiResource('votos', VotoController::class)->only(['index', 'store', 'show']);
+    
+    // ============================================
+    // REPORTES
+    // ============================================
+    
+    /**
+     * @group Reportes
+     * 
+     * Rutas para generar reportes en diferentes formatos (PDF, Excel, Word).
+     * 
+     * Todos los reportes se generan desde la base de datos del PH actual.
+     */
+    
+    // Reportes PDF
+    Route::get('reportes/reuniones/{reunion}/acta-pdf', [ReporteController::class, 'actaReunionPdf'])
+        ->name('reportes.reuniones.acta-pdf')
+        ->where('reunion', '[0-9]+');
+    Route::get('reportes/asistentes/lista-pdf', [ReporteController::class, 'listaAsistentesPdf'])
+        ->name('reportes.asistentes.lista-pdf');
+    Route::get('reportes/preguntas/{pregunta}/resultados-pdf', [ReporteController::class, 'resultadosVotacionPdf'])
+        ->name('reportes.preguntas.resultados-pdf')
+        ->where('pregunta', '[0-9]+');
+    
+    // Reportes Excel
+    Route::get('reportes/reuniones/{reunion}/exportar-excel', [ReporteController::class, 'exportarReunionExcel'])
+        ->name('reportes.reuniones.exportar-excel')
+        ->where('reunion', '[0-9]+');
+    Route::get('reportes/asistentes/exportar-excel', [ReporteController::class, 'exportarAsistentesExcel'])
+        ->name('reportes.asistentes.exportar-excel');
+    Route::get('reportes/preguntas/{pregunta}/exportar-excel', [ReporteController::class, 'exportarVotacionExcel'])
+        ->name('reportes.preguntas.exportar-excel')
+        ->where('pregunta', '[0-9]+');
+    Route::get('reportes/inmuebles/exportar-excel', [ReporteController::class, 'exportarInmueblesExcel'])
+        ->name('reportes.inmuebles.exportar-excel');
+    
+    // Reportes Word
+    Route::get('reportes/reuniones/{reunion}/acta-word', [ReporteController::class, 'actaReunionWord'])
+        ->name('reportes.reuniones.acta-word')
+        ->where('reunion', '[0-9]+');
+    
+    // Estadísticas
+    Route::get('reportes/reuniones/{reunion}/estadisticas', [ReporteController::class, 'estadisticasReunion'])
+        ->name('reportes.reuniones.estadisticas')
+        ->where('reunion', '[0-9]+');
 });
