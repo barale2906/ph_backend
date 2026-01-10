@@ -7,6 +7,7 @@ use App\Http\Requests\Phs\StorePhRequest;
 use App\Http\Requests\Phs\UpdatePhRequest;
 use App\Http\Resources\Phs\PhResource;
 use App\Models\Ph;
+use App\Services\PhDatabaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -63,12 +64,18 @@ class PhController extends Controller
      * Crea una nueva Propiedad Horizontal en el sistema.
      * Solo los superadministradores pueden crear PHs.
      * 
+     * Este endpoint crea:
+     * - El registro del PH en la base de datos MASTER
+     * - La base de datos física del PH
+     * - Ejecuta todas las migraciones en la nueva base de datos
+     * 
      * @authenticated
      * 
      * @bodyParam nit string required NIT único de la PH. Example: 900123456
      * @bodyParam nombre string required Nombre de la PH. Example: PH Ejemplo
      * @bodyParam db_name string required Nombre de la base de datos (solo letras minúsculas, números y guiones bajos). Example: ph_ejemplo_900123456
      * @bodyParam estado string Estado de la PH (activo/inactivo). Default: activo. Example: activo
+     * @bodyParam crear_base_datos boolean Si se debe crear la base de datos y ejecutar migraciones. Default: true. Example: true
      * 
      * @response 201 {
      *   "message": "PH creado exitosamente",
@@ -95,12 +102,33 @@ class PhController extends Controller
      */
     public function store(StorePhRequest $request): JsonResponse
     {
-        $ph = Ph::create($request->validated());
+        $phDatabaseService = app(PhDatabaseService::class);
+        $crearBaseDatos = $request->input('crear_base_datos', true);
 
-        return response()->json([
-            'message' => 'PH creado exitosamente',
-            'data' => new PhResource($ph)
-        ], 201);
+        try {
+            // Crear registro del PH
+            $ph = Ph::create($request->validated());
+
+            // Crear base de datos y ejecutar migraciones si se solicita
+            if ($crearBaseDatos) {
+                $phDatabaseService->crearBaseDatos($ph);
+            }
+
+            return response()->json([
+                'message' => 'PH creado exitosamente' . ($crearBaseDatos ? ' (base de datos y migraciones ejecutadas)' : ''),
+                'data' => new PhResource($ph)
+            ], 201);
+        } catch (\Exception $e) {
+            // Si falló la creación de la base de datos, eliminar el registro
+            if (isset($ph)) {
+                $ph->delete();
+            }
+
+            return response()->json([
+                'message' => 'Error al crear la PH',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

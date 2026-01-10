@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -54,7 +56,7 @@ class User extends Authenticatable
      */
     public function phs(): BelongsToMany
     {
-        return $this->belongsToMany(Ph::class, 'usuario_ph')
+        return $this->belongsToMany(Ph::class, 'usuario_ph', 'usuario_id', 'ph_id')
             ->withPivot('rol')
             ->withTimestamps();
     }
@@ -68,7 +70,16 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->phs()->where('phs.id', $phId)->exists();
+        // Usar DB directamente con la conexión pgsql explícitamente
+        // ya que la tabla usuario_ph está en la base de datos master
+        // NO usar database.default porque puede estar cambiado por el middleware
+        $masterConnection = 'pgsql';
+        
+        return DB::connection($masterConnection)
+            ->table('usuario_ph')
+            ->where('usuario_id', $this->id)
+            ->where('ph_id', $phId)
+            ->exists();
     }
 
     /**

@@ -26,6 +26,7 @@ class StorePhRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'db_name' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/'],
             'estado' => ['sometimes', 'string', 'in:activo,inactivo'],
+            'crear_base_datos' => ['sometimes', 'boolean'],
         ];
     }
 

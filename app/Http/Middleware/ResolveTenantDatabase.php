@@ -66,6 +66,10 @@ class ResolveTenantDatabase
         // IMPORTANTE: Nunca se acepta PH por body sin validar contra usuario
         if ($request->user()) {
             $user = $request->user();
+            
+            // Refrescar el usuario para asegurar que tiene los datos actualizados
+            $user->refresh();
+            
             if (!$user->tieneAccesoPh($ph->id)) {
                 return response()->json([
                     'error' => 'No autorizado para acceder a este PH',

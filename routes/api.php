@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Asistentes\AsistenteController;
 use App\Http\Controllers\Inmuebles\InmuebleController;
+use App\Http\Controllers\Internal\SimulateMessageController;
 use App\Http\Controllers\Phs\PhController;
 use App\Http\Controllers\Reuniones\ReunionController;
 use App\Http\Controllers\Reportes\ReporteController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Timers\TimerController;
 use App\Http\Controllers\Votaciones\OpcionController;
 use App\Http\Controllers\Votaciones\PreguntaController;
 use App\Http\Controllers\Votaciones\VotoController;
+use App\Http\Controllers\Whatsapp\WhatsappWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -21,6 +23,44 @@ use Illuminate\Support\Facades\Route;
  * }
  */
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
+
+// ============================================
+// WEBHOOK WHATSAPP (Sin autenticación)
+// ============================================
+
+/**
+ * Webhook de WhatsApp (Meta Cloud API)
+ * 
+ * Endpoint público para recibir mensajes de WhatsApp desde Meta.
+ * 
+ * IMPORTANTE: Este endpoint NO requiere autenticación porque es llamado
+ * directamente por los servidores de Meta. La seguridad se garantiza mediante:
+ * - Validación de firma X-Hub-Signature-256
+ * - Token de verificación (hub_verify_token)
+ * 
+ * Rutas:
+ * - GET /api/webhooks/whatsapp - Verificación del webhook (Meta)
+ * - POST /api/webhooks/whatsapp - Recepción de mensajes (Meta)
+ */
+Route::match(['get', 'post'], '/webhooks/whatsapp', [WhatsappWebhookController::class, 'handle'])
+    ->name('webhooks.whatsapp');
+
+// ============================================
+// RUTAS INTERNAS (Para pruebas y simulación)
+// ============================================
+
+/**
+ * Simulador de WhatsApp
+ * 
+ * Endpoint interno para simular mensajes de WhatsApp sin usar SDKs de Meta.
+ * Usa la MISMA lógica que usará WhatsApp real.
+ * 
+ * IMPORTANTE: Este endpoint requiere autenticación y tenant (para configurar la DB del PH).
+ */
+Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
+    Route::post('/internal/simulate-message', [SimulateMessageController::class, 'simulateMessage'])
+        ->name('internal.simulate-message');
+});
 
 // ============================================
 // RUTAS MASTER (No requieren tenant)

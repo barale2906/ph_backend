@@ -48,7 +48,7 @@ class Ph extends Model
      */
     public function usuarios(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'usuario_ph')
+        return $this->belongsToMany(User::class, 'usuario_ph', 'ph_id', 'usuario_id')
             ->withPivot('rol')
             ->withTimestamps();
     }
