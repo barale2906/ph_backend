@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\DTOs\WhatsappIncomingMessageDTO;
 use App\Models\Asistentes\Asistente;
+use App\Models\Asistentes\AsistenteInmueble;
+use App\Models\Inmuebles\Inmueble;
 use App\Models\Ph;
 use App\Models\Reuniones\Reunion;
 use App\Models\Votaciones\Opcion;
 use App\Models\Votaciones\Pregunta;
 use App\Models\Votaciones\Voto;
+use App\Models\WhatsappLog;
 use App\Services\Whatsapp\WhatsappSecurityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -63,7 +66,10 @@ class WhatsappSecurityTest extends TestCase
         // Crear reunión y asistente en PH1
         $this->reunion1 = Reunion::create([
             'nombre' => 'Reunión PH1',
-            'fecha' => now(),
+            'tipo' => 'ordinaria',
+            'fecha' => now()->toDateString(),
+            'hora' => now()->format('H:i:s'),
+            'modalidad' => 'virtual',
             'estado' => 'iniciada',
         ]);
 
@@ -71,6 +77,23 @@ class WhatsappSecurityTest extends TestCase
             'nombre' => 'Asistente PH1',
             'telefono' => '573001112233',
             'documento' => '1111111111',
+        ]);
+
+        $inmueble1 = Inmueble::create([
+            'nomenclatura' => 'APT-101',
+            'coeficiente' => 1.50,
+            'tipo' => 'apartamento',
+            'propietario_documento' => '1111111111',
+            'propietario_nombre' => 'Propietario 1',
+            'telefono' => '3001112233',
+            'email' => 'prop1@example.com',
+            'activo' => true,
+        ]);
+
+        AsistenteInmueble::create([
+            'asistente_id' => $this->asistente1->id,
+            'inmueble_id' => $inmueble1->id,
+            'coeficiente' => $inmueble1->coeficiente,
         ]);
 
         $this->pregunta1 = Pregunta::create([
@@ -90,7 +113,10 @@ class WhatsappSecurityTest extends TestCase
 
         $this->reunion2 = Reunion::create([
             'nombre' => 'Reunión PH2',
-            'fecha' => now(),
+            'tipo' => 'ordinaria',
+            'fecha' => now()->toDateString(),
+            'hora' => now()->format('H:i:s'),
+            'modalidad' => 'virtual',
             'estado' => 'iniciada',
         ]);
 
@@ -98,6 +124,23 @@ class WhatsappSecurityTest extends TestCase
             'nombre' => 'Asistente PH2',
             'telefono' => '573004445566', // Diferente teléfono
             'documento' => '2222222222',
+        ]);
+
+        $inmueble2 = Inmueble::create([
+            'nomenclatura' => 'APT-201',
+            'coeficiente' => 2.00,
+            'tipo' => 'apartamento',
+            'propietario_documento' => '2222222222',
+            'propietario_nombre' => 'Propietario 2',
+            'telefono' => '3004445566',
+            'email' => 'prop2@example.com',
+            'activo' => true,
+        ]);
+
+        AsistenteInmueble::create([
+            'asistente_id' => $this->asistente2->id,
+            'inmueble_id' => $inmueble2->id,
+            'coeficiente' => $inmueble2->coeficiente,
         ]);
 
         $this->pregunta2 = Pregunta::create([
@@ -247,9 +290,28 @@ class WhatsappSecurityTest extends TestCase
             datos: ['message_id' => $dto->messageId]
         );
 
-        // Verificar que se registró en logs
-        // En producción, esto se verificaría consultando la tabla de auditoría
-        $this->assertTrue(true); // Placeholder - en producción verificar tabla de auditoría
+        // Verificar que se registró en la tabla master de auditoría
+        $this->assertDatabaseHas('whatsapp_logs', [
+            'telefono' => $dto->from,
+            'message_id' => $dto->messageId,
+            'ph_id' => $this->ph1->id,
+        ]);
+    }
+
+    /**
+     * CRITERIO: Protección contra replay de mensajes.
+     *
+     * Verifica que un message_id repetido se detecta como duplicado.
+     */
+    public function test_replay_de_mensaje_se_bloquea(): void
+    {
+        $securityService = app(WhatsappSecurityService::class);
+
+        $first = $securityService->registrarMessageId('msg_replay_1');
+        $second = $securityService->registrarMessageId('msg_replay_1');
+
+        $this->assertTrue($first, 'El primer registro debe permitirse');
+        $this->assertFalse($second, 'El segundo registro debe marcarse como duplicado');
     }
 
     /**

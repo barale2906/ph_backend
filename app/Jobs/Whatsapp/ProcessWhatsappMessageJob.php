@@ -75,6 +75,27 @@ class ProcessWhatsappMessageJob implements ShouldQueue
         ]);
 
         try {
+            // Proteccion contra replay: message_id único con TTL
+            if (!$securityService->registrarMessageId($this->message->messageId)) {
+                Log::warning('Mensaje duplicado detectado (replay)', [
+                    'message_id' => $this->message->messageId,
+                    'telefono' => $this->message->from,
+                ]);
+
+                $securityService->auditar(
+                    phId: null,
+                    reunionId: null,
+                    telefono: $this->message->from,
+                    tipo: 'mensaje_recibido',
+                    datos: [
+                        'message_id' => $this->message->messageId,
+                        'estado' => 'duplicado',
+                        'motivo' => 'Replay detectado',
+                    ]
+                );
+                return;
+            }
+
             // Verificar permisos de seguridad (rate limit, flood)
             $permiso = $securityService->verificarPermiso($this->message->from);
             
@@ -91,6 +112,18 @@ class ProcessWhatsappMessageJob implements ShouldQueue
                     $mensajeBloqueo .= " Intenta nuevamente en {$minutos} minuto(s).";
                 }
                 $responseService->enviarMensaje($this->message->from, $mensajeBloqueo);
+
+                $securityService->auditar(
+                    phId: null,
+                    reunionId: null,
+                    telefono: $this->message->from,
+                    tipo: 'mensaje_recibido',
+                    datos: [
+                        'message_id' => $this->message->messageId,
+                        'estado' => 'rechazado',
+                        'motivo' => $permiso['reason'],
+                    ]
+                );
                 return;
             }
 
@@ -108,6 +141,18 @@ class ProcessWhatsappMessageJob implements ShouldQueue
                 $responseService->enviarMensaje(
                     $this->message->from,
                     'No estás registrado en ninguna Propiedad Horizontal. Contacta al administrador.'
+                );
+
+                $securityService->auditar(
+                    phId: null,
+                    reunionId: null,
+                    telefono: $this->message->from,
+                    tipo: 'mensaje_recibido',
+                    datos: [
+                        'message_id' => $this->message->messageId,
+                        'estado' => 'rechazado',
+                        'motivo' => 'telefono_no_registrado',
+                    ]
                 );
                 return;
             }
@@ -135,6 +180,8 @@ class ProcessWhatsappMessageJob implements ShouldQueue
                 datos: [
                     'mensaje' => $this->message->message,
                     'resultado' => $resultado->isSuccess(),
+                    'message_id' => $this->message->messageId,
+                    'estado' => $resultado->isSuccess() ? 'procesado' : 'error',
                 ]
             );
 

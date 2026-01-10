@@ -81,14 +81,16 @@ class QuorumService
     {
         $cacheKey = $this->getCacheKey($reunionId);
 
-        // Intentar obtener desde Redis
-        try {
-            $cached = Redis::get($cacheKey);
-            if ($cached) {
-                return json_decode($cached, true);
+        // Intentar obtener desde Redis solo si la extensión está disponible
+        if (class_exists(\Redis::class)) {
+            try {
+                $cached = Redis::get($cacheKey);
+                if ($cached) {
+                    return json_decode($cached, true);
+                }
+            } catch (\Exception $e) {
+                // Si Redis falla, continuar con cálculo
             }
-        } catch (\Exception $e) {
-            // Si Redis falla, continuar con cálculo
         }
 
         // Si no está en Redis, calcular y guardar
@@ -109,14 +111,17 @@ class QuorumService
     {
         $cacheKey = $this->getCacheKey($reunionId);
 
-        try {
-            Redis::setex($cacheKey, self::DEFAULT_TTL, json_encode($quorum));
-            return true;
-        } catch (\Exception $e) {
-            // Si Redis falla, usar Cache de Laravel como fallback
-            Cache::put($cacheKey, $quorum, self::DEFAULT_TTL);
-            return false;
+        if (class_exists(\Redis::class)) {
+            try {
+                Redis::setex($cacheKey, self::DEFAULT_TTL, json_encode($quorum));
+                return true;
+            } catch (\Exception $e) {
+                // Si Redis falla, usar Cache de Laravel como fallback
+            }
         }
+
+        Cache::put($cacheKey, $quorum, self::DEFAULT_TTL);
+        return false;
     }
 
     /**
@@ -151,12 +156,16 @@ class QuorumService
     {
         $cacheKey = $this->getCacheKey($reunionId);
 
-        try {
-            Redis::del($cacheKey);
-        } catch (\Exception $e) {
-            // Si Redis falla, usar Cache de Laravel
-            Cache::forget($cacheKey);
+        if (class_exists(\Redis::class)) {
+            try {
+                Redis::del($cacheKey);
+                return;
+            } catch (\Exception $e) {
+                // Si Redis falla, usar Cache de Laravel
+            }
         }
+
+        Cache::forget($cacheKey);
     }
 
     /**

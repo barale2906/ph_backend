@@ -69,13 +69,22 @@ class TenantResolver
      */
     protected function setDatabaseConnection(string $dbName): void
     {
-        // Obtener configuración base de PostgreSQL
-        $baseConfig = Config::get('database.connections.pgsql');
-        
-        // Crear configuración específica para este PH
-        $config = array_merge($baseConfig, [
-            'database' => $dbName,
-        ]);
+        // Para pruebas usamos la conexión por defecto (ej. sqlite in-memory)
+        if (app()->environment('testing')) {
+            $default = Config::get('database.default');
+            $baseConfig = Config::get("database.connections.{$default}");
+            $config = $baseConfig;
+            // Mantener la misma base para todos los tenants en pruebas
+            $config['database'] = $baseConfig['database'] ?? database_path('database.sqlite');
+        } else {
+            // Obtener configuración base de PostgreSQL
+            $baseConfig = Config::get('database.connections.pgsql');
+            
+            // Crear configuración específica para este PH
+            $config = array_merge($baseConfig, [
+                'database' => $dbName,
+            ]);
+        }
 
         // Configurar la conexión dinámica
         Config::set("database.connections.ph_database", $config);
@@ -83,8 +92,10 @@ class TenantResolver
         // Limpiar cualquier conexión existente para forzar recreación
         DB::purge('ph_database');
         
-        // Establecer como conexión por defecto para este request
-        DB::setDefaultConnection('ph_database');
+        // En producción se usa como conexión por defecto, en pruebas mantenemos la actual
+        if (!app()->environment('testing')) {
+            DB::setDefaultConnection('ph_database');
+        }
     }
 
     /**

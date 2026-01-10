@@ -7,9 +7,11 @@ use App\Models\Votaciones\Pregunta;
 use App\Models\Votaciones\Voto;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -90,36 +92,54 @@ class RegistrarVotoDesdeAsistenteJob implements ShouldQueue
         // Replicar el voto para cada inmueble que el asistente representa
         DB::transaction(function () use (&$votosRegistrados, $inmuebles) {
             foreach ($inmuebles as $inmueble) {
-                // Verificar si el inmueble ya votó
-                $votoExistente = Voto::where('pregunta_id', $this->preguntaId)
-                    ->where('inmueble_id', $inmueble->id)
-                    ->first();
+                $lock = Cache::lock("voto:{$this->preguntaId}:{$inmueble->id}", 5);
 
-                if ($votoExistente) {
-                    // Si ya votó, continuar con el siguiente inmueble
+                if (!$lock->get()) {
+                    Log::warning('No se pudo obtener lock para voto replicado', [
+                        'pregunta_id' => $this->preguntaId,
+                        'inmueble_id' => $inmueble->id,
+                    ]);
                     continue;
                 }
 
-                // Registrar el voto para este inmueble
-                $voto = Voto::create([
-                    'pregunta_id' => $this->preguntaId,
-                    'inmueble_id' => $inmueble->id,
-                    'opcion_id' => $this->opcionId,
-                    'coeficiente' => $inmueble->coeficiente,
-                    'telefono' => $this->telefono,
-                    'votado_at' => now()->utc(),
-                ]);
+                try {
+                    // Verificar si el inmueble ya votó
+                    $votoExistente = Voto::where('pregunta_id', $this->preguntaId)
+                        ->where('inmueble_id', $inmueble->id)
+                        ->first();
 
-                $votosRegistrados[] = $voto;
+                    if ($votoExistente) {
+                        continue;
+                    }
 
-                Log::info('Voto registrado desde asistente (job)', [
-                    'voto_id' => $voto->id,
-                    'pregunta_id' => $this->preguntaId,
-                    'asistente_id' => $this->asistenteId,
-                    'inmueble_id' => $inmueble->id,
-                    'opcion_id' => $this->opcionId,
-                    'coeficiente' => $inmueble->coeficiente,
-                ]);
+                    // Registrar el voto para este inmueble
+                    $voto = Voto::create([
+                        'pregunta_id' => $this->preguntaId,
+                        'inmueble_id' => $inmueble->id,
+                        'opcion_id' => $this->opcionId,
+                        'coeficiente' => $inmueble->coeficiente,
+                        'telefono' => $this->telefono,
+                        'votado_at' => now()->utc(),
+                    ]);
+
+                    $votosRegistrados[] = $voto;
+
+                    Log::info('Voto registrado desde asistente (job)', [
+                        'voto_id' => $voto->id,
+                        'pregunta_id' => $this->preguntaId,
+                        'asistente_id' => $this->asistenteId,
+                        'inmueble_id' => $inmueble->id,
+                        'opcion_id' => $this->opcionId,
+                        'coeficiente' => $inmueble->coeficiente,
+                    ]);
+                } catch (QueryException $e) {
+                    if (str_contains($e->getMessage(), 'unique') || str_contains($e->getMessage(), 'UNIQUE')) {
+                        continue;
+                    }
+                    throw $e;
+                } finally {
+                    optional($lock)->release();
+                }
             }
         });
 

@@ -47,16 +47,11 @@ trait UsesPhDatabase
      */
     public function getConnectionName(): string
     {
-        // En pruebas, permitir usar la conexión por defecto si ph_database no está configurada
+        // En pruebas usar siempre la conexión por defecto para evitar bloqueos SQLite
         if (app()->environment('testing')) {
-            $defaultConnection = config('database.default');
-            if (!config("database.connections.ph_database")) {
-                // Si ph_database no está configurada en pruebas, usar la conexión por defecto
-                // Esto permite que RefreshDatabase funcione correctamente
-                return $defaultConnection;
-            }
+            return config('database.default');
         }
-        
+
         return 'ph_database';
     }
 
@@ -82,6 +77,8 @@ trait UsesPhDatabase
             'users',
             'usuario_ph',
             'auditoria_eventos',
+            'whatsapp_logs',
+            'ia_jobs',
             'migrations',
             'password_reset_tokens',
             'sessions',

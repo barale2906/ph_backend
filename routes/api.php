@@ -43,6 +43,7 @@ Route::get('/health', fn() => response()->json(['status' => 'ok']));
  * - POST /api/webhooks/whatsapp - Recepción de mensajes (Meta)
  */
 Route::match(['get', 'post'], '/webhooks/whatsapp', [WhatsappWebhookController::class, 'handle'])
+    ->middleware('throttle:webhooks')
     ->name('webhooks.whatsapp');
 
 // ============================================
@@ -123,7 +124,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
      * 
      * Rutas para gestionar asistentes.
      */
-    Route::apiResource('asistentes', AsistenteController::class);
+    Route::apiResource('asistentes', AsistenteController::class)->middleware('throttle:asistencia');
     
     // ============================================
     // TIMERS (CRONÓMETROS)
@@ -175,7 +176,9 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
      * Rutas para gestionar votos.
      * IMPORTANTE: Los votos son inmutables una vez registrados.
      */
-    Route::apiResource('votos', VotoController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('votos', VotoController::class)
+        ->only(['index', 'store', 'show'])
+        ->middleware('throttle:votaciones');
     
     // ============================================
     // REPORTES

@@ -115,6 +115,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Replay Protection TTL
+    |--------------------------------------------------------------------------
+    |
+    | Tiempo (segundos) durante el cual se recuerda un message_id para
+    | prevenir reprocesar mensajes duplicados (protección contra replay).
+    |
+    */
+    'replay_ttl' => env('WHATSAPP_REPLAY_TTL', 300),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Name
     |--------------------------------------------------------------------------
     |

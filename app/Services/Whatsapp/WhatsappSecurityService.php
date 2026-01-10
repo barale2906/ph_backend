@@ -2,6 +2,7 @@
 
 namespace App\Services\Whatsapp;
 
+use App\Models\WhatsappLog;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
@@ -36,6 +37,28 @@ class WhatsappSecurityService
      * Duración del bloqueo por flood (segundos).
      */
     protected const FLOOD_BLOCK_DURATION = 3600; // 1 hora
+
+    /**
+     * Marca un message_id como procesado y devuelve si es nuevo.
+     *
+     * Protege contra replay de mensajes de Meta.
+     */
+    public function registrarMessageId(string $messageId): bool
+    {
+        if (empty($messageId)) {
+            return true; // no podemos validar, permitir flujo pero auditará luego
+        }
+
+        $ttl = (int) config('whatsapp.replay_ttl', 300);
+        $key = $this->messageCacheKey($messageId);
+
+        // add devuelve true si la clave no existía
+        if (Cache::add($key, true, $ttl)) {
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * Verifica si un número puede enviar mensajes (rate limit y flood).
@@ -172,7 +195,39 @@ class WhatsappSecurityService
             'timestamp' => now()->toIso8601String(),
         ]);
 
-        // TODO: En el futuro, guardar en tabla de auditoría específica de WhatsApp
-        // Por ahora, solo se registra en logs
+        // Guardar en tabla master para trazabilidad y protección contra replay
+        try {
+            $messageId = $datos['message_id'] ?? null;
+            $payload = [
+                'ph_id' => $phId,
+                'reunion_id' => $reunionId,
+                'telefono' => $telefono,
+                'tipo' => $tipo ?: 'mensaje_recibido',
+                'estado' => $datos['estado'] ?? 'procesado',
+                'motivo' => $datos['motivo'] ?? null,
+                'payload' => $datos,
+            ];
+
+            if ($messageId) {
+                WhatsappLog::updateOrCreate(
+                    ['message_id' => $messageId],
+                    array_merge($payload, ['message_id' => $messageId])
+                );
+            } else {
+                WhatsappLog::create($payload);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error guardando auditoría WhatsApp', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Obtiene la clave de cache usada para replay protection.
+     */
+    protected function messageCacheKey(string $messageId): string
+    {
+        return "whatsapp:message_id:{$messageId}";
     }
 }
