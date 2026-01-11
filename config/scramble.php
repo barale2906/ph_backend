@@ -138,13 +138,4 @@ return [
     ],
 
     'extensions' => [],
-
-    /*
-     * Configuración para evitar errores durante el análisis estático.
-     * Scramble intentará analizar las rutas sin ejecutar código que requiera DB.
-     */
-    'routes' => function (\Illuminate\Routing\RouteCollection $routes) {
-        // Retornar todas las rutas para análisis
-        return $routes;
-    },
 ];
