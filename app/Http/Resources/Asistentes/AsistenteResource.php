@@ -27,6 +27,7 @@ class AsistenteResource extends JsonResource
             'documento' => $this->documento,
             'telefono' => $this->telefono,
             'codigo_acceso' => $this->codigo_acceso,
+            'barcode_numero' => $this->barcode_numero,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             

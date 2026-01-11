@@ -20,11 +20,13 @@ return new class extends Migration
             $table->string('documento')->nullable()->comment('Número de documento de identidad (cédula o NIT). Puede ser nulo en casos donde no sea necesario registrarlo');
             $table->string('telefono')->nullable()->comment('Número de teléfono del asistente (usado para WhatsApp y contacto)');
             $table->string('codigo_acceso')->unique()->nullable()->comment('Código único de acceso para registro vía WhatsApp o Web (generado automáticamente)');
+            $table->integer('barcode_numero')->nullable()->comment('Número asignado al código de barras para votación física');
             $table->timestamps();
 
             // Índices
             $table->index('documento');
             $table->index('codigo_acceso');
+            $table->index('barcode_numero');
         });
     }
 

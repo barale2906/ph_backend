@@ -35,6 +35,7 @@ class UpdateAsistenteRequest extends FormRequest
             'nombre' => ['sometimes', 'string', 'max:255'],
             'documento' => ['nullable', 'string', 'max:20'],
             'telefono' => ['nullable', 'string', 'max:20'],
+            'barcode_numero' => ['nullable', 'integer', 'min:1'],
             'inmuebles' => ['sometimes', 'array', 'min:1'],
             'inmuebles.*' => ['required', 'integer', 'exists:inmuebles,id'],
         ];
@@ -51,6 +52,8 @@ class UpdateAsistenteRequest extends FormRequest
             'nombre.max' => 'El nombre no puede exceder 255 caracteres',
             'documento.max' => 'El documento no puede exceder 20 caracteres',
             'telefono.max' => 'El teléfono no puede exceder 20 caracteres',
+            'barcode_numero.integer' => 'El código de barras debe ser numérico',
+            'barcode_numero.min' => 'El código de barras debe ser mayor a cero',
             'inmuebles.array' => 'Los inmuebles deben ser un array',
             'inmuebles.min' => 'Debe asociar al menos un inmueble al asistente',
             'inmuebles.*.exists' => 'Uno o más inmuebles no existen',

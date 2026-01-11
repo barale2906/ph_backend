@@ -7,6 +7,7 @@ use App\Http\Requests\Asistentes\StoreAsistenteRequest;
 use App\Http\Requests\Asistentes\UpdateAsistenteRequest;
 use App\Http\Resources\Asistentes\AsistenteResource;
 use App\Models\Asistentes\Asistente;
+use App\Models\Votaciones\Pregunta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -87,6 +88,10 @@ class AsistenteController extends Controller
         $inmuebles = $validated['inmuebles'];
         unset($validated['inmuebles']);
 
+        if (array_key_exists('barcode_numero', $validated) && $this->votacionesEnCurso()) {
+            abort(409, 'La asignación de códigos de barras solo es posible antes de iniciar las votaciones.');
+        }
+
         $asistente = Asistente::create($validated);
         
         // Asociar inmuebles
@@ -153,6 +158,10 @@ class AsistenteController extends Controller
     {
         $validated = $request->validated();
         
+        if (array_key_exists('barcode_numero', $validated) && $this->votacionesEnCurso()) {
+            abort(409, 'La edición del código de barras solo es posible antes de iniciar las votaciones.');
+        }
+
         if (isset($validated['inmuebles'])) {
             $inmuebles = $validated['inmuebles'];
             unset($validated['inmuebles']);
@@ -165,6 +174,14 @@ class AsistenteController extends Controller
             'message' => 'Asistente actualizado exitosamente',
             'data' => new AsistenteResource($asistente->fresh()->load('inmuebles'))
         ]);
+    }
+
+    /**
+     * Determina si ya existe una votación abierta en el tenant actual.
+     */
+    protected function votacionesEnCurso(): bool
+    {
+        return Pregunta::where('estado', 'abierta')->exists();
     }
 
     /**

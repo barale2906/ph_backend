@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * @property string|null $documento Número de documento (puede ser nulo)
  * @property string|null $telefono Número de teléfono
  * @property string|null $codigo_acceso Código único de acceso (generado automáticamente)
+ * @property int|null $barcode_numero Número de código de barras asignado para papeleta física
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * 
@@ -38,6 +39,7 @@ class Asistente extends Model
         'documento',
         'telefono',
         'codigo_acceso',
+        'barcode_numero',
     ];
 
     protected $casts = [

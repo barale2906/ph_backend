@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Asistentes\AsistenteController;
+use App\Http\Controllers\Barcodes\BarcodePrintController;
 use App\Http\Controllers\Inmuebles\InmuebleController;
 use App\Http\Controllers\Internal\SimulateMessageController;
 use App\Http\Controllers\Phs\PhController;
@@ -125,6 +126,18 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
      * Rutas para gestionar asistentes.
      */
     Route::apiResource('asistentes', AsistenteController::class)->middleware('throttle:asistencia');
+
+    // ============================================
+    // CÓDIGOS DE BARRAS (IMPRESIÓN)
+    // ============================================
+
+    /**
+     * @group Códigos de barras
+     *
+     * Genera códigos de barras listos para imprimir.
+     */
+    Route::post('barcodes/print', [BarcodePrintController::class, 'imprimir'])
+        ->name('barcodes.print');
     
     // ============================================
     // TIMERS (CRONÓMETROS)

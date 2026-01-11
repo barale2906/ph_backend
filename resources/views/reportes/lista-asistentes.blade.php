@@ -84,6 +84,7 @@
                 <th>Documento</th>
                 <th>Teléfono</th>
                 <th>Código Acceso</th>
+                <th>Código Barras</th>
                 <th>Inmuebles</th>
                 <th>Coeficiente Total</th>
             </tr>
@@ -96,6 +97,7 @@
                     <td>{{ $asistente->documento ?? 'N/A' }}</td>
                     <td>{{ $asistente->telefono ?? 'N/A' }}</td>
                     <td>{{ $asistente->codigo_acceso }}</td>
+                    <td>{{ $asistente->barcode_numero ?? 'N/A' }}</td>
                     <td>{{ $asistente->inmuebles->pluck('nomenclatura')->join(', ') ?: 'N/A' }}</td>
                     <td>{{ round($asistente->inmuebles->sum('coeficiente'), 2) }}%</td>
                 </tr>
