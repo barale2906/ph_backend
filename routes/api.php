@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Asistentes\AsistenteController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Barcodes\BarcodePrintController;
 use App\Http\Controllers\Inmuebles\InmuebleController;
 use App\Http\Controllers\Internal\SimulateMessageController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Phs\PhController;
 use App\Http\Controllers\Reuniones\ReunionController;
 use App\Http\Controllers\Reportes\ReporteController;
 use App\Http\Controllers\Timers\TimerController;
+use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Votaciones\OpcionController;
 use App\Http\Controllers\Votaciones\PreguntaController;
 use App\Http\Controllers\Votaciones\VotoController;
@@ -24,6 +26,17 @@ use Illuminate\Support\Facades\Route;
  * }
  */
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
+
+// ============================================
+// AUTENTICACIÓN (Público - Login)
+// ============================================
+
+/**
+ * @group Autenticación
+ * 
+ * Rutas públicas para autenticación de usuarios.
+ */
+Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 
 // ============================================
 // WEBHOOK WHATSAPP (Sin autenticación)
@@ -69,12 +82,23 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
 // ============================================
 
 /**
- * Rutas de PHs (Propiedades Horizontales)
+ * Rutas de autenticación y usuarios
  * 
- * Estas rutas no requieren tenant porque gestionan las PHs
+ * Estas rutas no requieren tenant porque gestionan usuarios
  * en la base de datos maestra.
  */
 Route::middleware(['auth:sanctum'])->group(function () {
+    // Autenticación
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+    Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+    Route::post('/change-password', [AuthController::class, 'changePassword'])->name('auth.change-password');
+    
+    // Usuarios
+    Route::apiResource('users', UserController::class);
+    Route::post('users/{user}/assign-ph', [UserController::class, 'assignPh'])->name('users.assign-ph');
+    Route::post('users/{user}/remove-ph', [UserController::class, 'removePh'])->name('users.remove-ph');
+    
+    // PHs
     Route::apiResource('phs', PhController::class);
 });
 

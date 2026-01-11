@@ -6,6 +6,7 @@ use App\Models\Ph;
 use App\Models\User;
 use App\Policies\PhPolicy;
 use App\Policies\PoderPolicy;
+use App\Policies\UserPolicy;
 use App\Policies\VotacionPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Ph::class => PhPolicy::class,
+        User::class => UserPolicy::class,
     ];
 
     /**
