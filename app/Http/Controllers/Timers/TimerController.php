@@ -46,7 +46,7 @@ class TimerController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<TimerResource>
      */
     public function index(): AnonymousResourceCollection
     {

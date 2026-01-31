@@ -43,7 +43,7 @@ class UserController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<UserResource>
      */
     public function index(): AnonymousResourceCollection
     {

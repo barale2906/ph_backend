@@ -38,7 +38,7 @@ class OpcionController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<OpcionResource>
      */
     public function index(): AnonymousResourceCollection
     {

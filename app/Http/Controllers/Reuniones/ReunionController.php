@@ -45,7 +45,7 @@ class ReunionController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<ReunionResource>
      */
     public function index(): AnonymousResourceCollection
     {

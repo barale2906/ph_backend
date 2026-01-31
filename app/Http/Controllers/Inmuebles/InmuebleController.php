@@ -39,14 +39,20 @@ class InmuebleController extends Controller
      *       "nomenclatura": "APT-101",
      *       "coeficiente": 1.5,
      *       "tipo": "apartamento",
-     *       "activo": true
+     *       "propietario_documento": "1234567890",
+     *       "propietario_nombre": "Juan Pérez",
+     *       "telefono": "+573001234567",
+     *       "email": "juan@example.com",
+     *       "activo": true,
+     *       "created_at": "2024-01-01T00:00:00.000000Z",
+     *       "updated_at": "2024-01-01T00:00:00.000000Z"
      *     }
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return JsonResponse
      */
-    public function index(): AnonymousResourceCollection
+    public function index(): JsonResponse
     {
         $query = Inmueble::query()
             ->when(request('activo') !== null, fn($q) => $q->where('activo', request('activo')))
@@ -55,7 +61,7 @@ class InmuebleController extends Controller
             ->when(request('with_asistentes'), fn($q) => $q->with('asistentes'))
             ->orderBy('nomenclatura');
 
-        return InmuebleResource::collection($query->get());
+        return InmuebleResource::collection($query->get())->response();
     }
 
     /**
@@ -107,17 +113,23 @@ class InmuebleController extends Controller
      * 
      * @urlParam inmueble integer required ID del inmueble. Example: 1
      * 
+     * @return InmuebleResource
+     * 
      * @response 200 {
      *   "id": 1,
      *   "nomenclatura": "APT-101",
      *   "coeficiente": 1.5,
      *   "tipo": "apartamento",
+     *   "propietario_documento": "1234567890",
      *   "propietario_nombre": "Juan Pérez",
-     *   "activo": true
+     *   "telefono": "+573001234567",
+     *   "email": "juan@example.com",
+     *   "activo": true,
+     *   "created_at": "2024-01-01T00:00:00.000000Z",
+     *   "updated_at": "2024-01-01T00:00:00.000000Z"
      * }
      * 
      * @param Inmueble $inmueble
-     * @return InmuebleResource
      */
     public function show(Inmueble $inmueble): InmuebleResource
     {

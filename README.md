@@ -22,6 +22,72 @@ Sistema backend para la gestión de asambleas, votaciones y reuniones de Propied
 - ✅ Integración con WhatsApp
 - ✅ Códigos de barras para asistentes
 
+## Ejecutar con Docker
+
+El proyecto está configurado para ejecutarse con Docker (PHP 8.2, Nginx, **PostgreSQL 16**). No necesitas instalar PHP ni PostgreSQL en tu sistema.
+
+### Primera vez
+
+```bash
+make up
+```
+
+Esto crea el `.env` desde `.env.docker` si no existe, construye las imágenes y arranca los contenedores. La API queda en **http://localhost:8000** y PostgreSQL en **localhost:5432**.
+
+Si es la primera vez, después de `make up` ejecuta:
+
+```bash
+make composer install
+make artisan key:generate
+make artisan migrate
+make artisan db:seed --class=AdminUserSeeder
+```
+
+### Flujo diario (recomendado)
+
+| Momento      | Comando     | Descripción                                              |
+|-------------|-------------|----------------------------------------------------------|
+| **Fin del día**  | `make stop`  | Detiene contenedores sin borrar volúmenes (datos se conservan). |
+| **Inicio del día** | `make start` | Arranca los contenedores y muestra las URLs.             |
+
+Solo usa `make down` y `make up` cuando cambies Dockerfile o quieras reconstruir todo. **No uses** `docker compose down -v` si quieres conservar la base de datos.
+
+### Comandos útiles con Docker
+
+```bash
+# Migraciones
+make artisan migrate
+
+# Instalar dependencias PHP
+make composer install
+
+# Crear usuario admin (después de migrar)
+make artisan db:seed --class=AdminUserSeeder
+
+# Entrar al contenedor de la app
+make app
+
+# Entrar a PostgreSQL (psql)
+make db
+```
+
+Desde dentro del contenedor o con `make artisan` puedes usar cualquier comando de Artisan.
+
+### Puertos
+
+- **8000**: Nginx (API Laravel)
+- **5432**: PostgreSQL (usuario `postgres`, contraseña `root`, base de datos `ph_backend`)
+
+### Conectar con DBeaver
+
+Para conectar **DBeaver** a la base de datos PostgreSQL que corre en Docker, sigue la guía paso a paso:
+
+👉 **[docs/DOCKER_DBEAVER.md](docs/DOCKER_DBEAVER.md)**
+
+Resumen de datos de conexión: **Host** `localhost`, **Puerto** `5432`, **Base de datos** `ph_backend`, **Usuario** `postgres`, **Contraseña** `root`.
+
+---
+
 ## Configuración Inicial
 
 ### Crear Usuario Administrador

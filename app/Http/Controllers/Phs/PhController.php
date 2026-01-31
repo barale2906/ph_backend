@@ -27,7 +27,7 @@ class PhController extends Controller
      * 
      * @authenticated
      * 
-     * @response 200 {
+     * @response 200 scenario=success {
      *   "data": [
      *     {
      *       "id": 1,
@@ -41,9 +41,8 @@ class PhController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index()
     {
         $this->authorize('viewAny', Ph::class);
 

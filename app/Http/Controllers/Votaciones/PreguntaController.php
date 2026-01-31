@@ -45,7 +45,7 @@ class PreguntaController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<PreguntaResource>
      */
     public function index(): AnonymousResourceCollection
     {

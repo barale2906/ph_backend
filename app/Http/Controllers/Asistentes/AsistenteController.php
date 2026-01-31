@@ -44,7 +44,7 @@ class AsistenteController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<AsistenteResource>
      */
     public function index(): AnonymousResourceCollection
     {

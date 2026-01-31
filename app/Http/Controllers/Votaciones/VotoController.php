@@ -54,7 +54,7 @@ class VotoController extends Controller
      *   ]
      * }
      * 
-     * @return AnonymousResourceCollection
+     * @return AnonymousResourceCollection<VotoResource>
      */
     public function index(): AnonymousResourceCollection
     {
